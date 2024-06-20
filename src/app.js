@@ -17,5 +17,11 @@ app.use(express.static("public"))
 // to store cookies on users browser and to perform crud operations there
 app.use(cookieParser())
 
+//routes import
+import userRouter from "./routes/user.routes.js"
+
+//routes declaration
+app.use("/api/v1/users", userRouter)
+// the above line will work as http://localhost:8000/api/v1/users/register
 
 export { app }
