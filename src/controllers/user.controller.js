@@ -532,6 +532,5 @@ export  {
     getCurrentUser,
     getUserChannelProfile,
     updateUserAccountDetails,
-    getUserChannelProfile,
     getWatchHistory
 }
