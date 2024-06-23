@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose"
 
 const options = {
     maxAge: 24*60*60*1000,
@@ -324,11 +325,11 @@ const updateAvatarImage = asyncHandler(async(req,res)=>{
     // check this method also: oldAvatarUrl = getCurrentUser().avatar
 
     // got the url and now delete it
-    const deleting = await cloudinary.uploader.destroy(oldAvatarUrl)
+    // const deleting = await cloudinary.uploader.destroy(oldAvatarUrl)
 
-    if(!deleting){
-        throw new ApiError(500, "Deletion from cloudinary failed")
-    }
+    // if(!deleting){
+    //     throw new ApiError(500, "Deletion from cloudinary failed")
+    // }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
@@ -389,7 +390,7 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
 
 const getUserChannelProfile = asyncHandler(async(req,res)=>{
     const {username} = req.params
-
+    console.log("Fetching channel profile for username: ", username);
     if(!username?.trim()){
         throw new ApiError(400, "User is missing")
     }
@@ -466,7 +467,7 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
     ])
 
     if(!channel?.length){
-        throw new ApiError(400, "Channel not found")
+        throw new ApiError(404, "Channel not found")
     }
 
     return res

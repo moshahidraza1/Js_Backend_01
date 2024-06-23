@@ -31,9 +31,10 @@ router.route("/refresh-token").post(refreshAccessToken)
 router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 router.route("/current-user").get(verifyJWT, getCurrentUser)
 router.route("/update-account").patch(verifyJWT, updateUserAccountDetails)
-router.route("/avatar").patch(verifyJWT, updateAvatarImage)
-router.route("/cover-image").patch(verifyJWT, updateCoverImage)
+router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateAvatarImage)
+router.route("/cover-image").patch(verifyJWT, upload.single("coverImage") ,updateCoverImage)
 // when we are getting details from params we need to specify endpoints ref like this /c/:param_name
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile)
+
 router.route("/history").get(verifyJWT, getWatchHistory)
 export default router
