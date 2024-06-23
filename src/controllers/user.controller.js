@@ -243,6 +243,29 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 // writing code for updating user details
 
+// update user details
+const updateUserAccountDetails = asyncHandler(async (req, res) => {
+    const {fullName, email} = req.body
+
+    if(!fullName || !email){
+        throw new ApiError(400, "fullName and email are required.")
+    }
+    const user = await User.findByIdAndUpdate(req.user?._id, {
+        $set: {
+            fullName,
+            email
+        }   
+    },
+    {new: true}
+    ).select("-password")
+
+    // if(!user){
+    //     throw new ApiError(400, "Unauthorized request for changing email and fullname.")
+    // }
+
+    res.status(200)
+    .json( new ApiResponse(200, user, "updated email and fullName. "))
+})
 // update password while user is loggedin
 const changeCurrentPassword = asyncHandler( async(req, res)=>{
     const {oldPassword, newPassword} = req.body
@@ -297,7 +320,7 @@ const updateAvatarImage = asyncHandler(async(req,res)=>{
     }
 
     //TODO: delete old image
-    const oldAvatarUrl = await User.findById(req.user?._id).avatar
+    const oldAvatarUrl = await User.findById(req.user?._id)?.avatar
     // check this method also: oldAvatarUrl = getCurrentUser().avatar
 
     // got the url and now delete it
@@ -359,6 +382,147 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     .status(200)
     .json(new ApiResponse(200, user, "successfully updated cover image"))
 })
+
+// aggregation pipelines 
+
+// get users subscribers and subscribedTo count
+
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+    const {username} = req.params
+
+    if(!username?.trim()){
+        throw new ApiError(400, "User is missing")
+    }
+
+    const channel = await User.aggregate([
+        //filter the username from documents
+        {
+            $match:{
+                username: username?.toLowerCase()
+            }
+        },
+        // second pipeline
+        // look inside all document's channels where this useIid is present
+        /*The idea behind finding subscribers:
+        For every subscribe a user hits new document is created which contains: {channel , subscriber(userId)}
+        So, we will look for all documents where this user's channel is present and we will gwt our subscribers 
+        Note:[we have not created an array for subscribers because it will be expensive for database queries when subscribers count hits a larger value.*/
+        {
+            
+                $lookup:{
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "channel",
+                    as: "subscribers"
+                }
+            
+        },
+        // third pipeline
+        // current user have subscribedTo
+        // *subscriptions is our data model
+        /* The idea behind finding number of channels subscribed to :
+        for every user a document will be created for every subscription as prev. ,
+        here we are looking for in how many docs this current user is present in as subscriber */
+        {
+            $lookup:{
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        // join these fields in user model
+        {
+            $addFields:{
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                channelSubscribedToCount: { 
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                    
+                }
+            }
+        },
+        // display(project) what we want to send in user profile
+        {
+            $project: {
+                fullName: 1,
+                email: 1,
+                subscribersCount: 1,
+                channelSubscribedToCount: 1,
+                avatar: 1,
+                coverImage: 1,
+                username: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(400, "Channel not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
+
+})
+
+// get users watch history
+
+const getWatchHistory = asyncHandler(async(req,res)=>{
+    //why we are not using req.user?_id
+    const user = await User.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName:1,
+                                        username:1,
+                                        avatar:1
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                owner: {
+                    $first: "$owner"
+                }
+            }
+        },
+    ])
+    res.status(200)
+    .json(new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"))
+})
 export  {
     registerUser,
     loginUser,
@@ -366,5 +530,8 @@ export  {
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
-
+    getUserChannelProfile,
+    updateUserAccountDetails,
+    getUserChannelProfile,
+    getWatchHistory
 }
