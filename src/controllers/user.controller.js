@@ -529,6 +529,8 @@ export  {
     logoutUser,
     refreshAccessToken,
     changeCurrentPassword,
+    updateAvatarImage,
+    updateCoverImage,
     getCurrentUser,
     getUserChannelProfile,
     updateUserAccountDetails,
