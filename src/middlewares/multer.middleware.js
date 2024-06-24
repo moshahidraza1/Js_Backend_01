@@ -7,6 +7,7 @@ const storage = multer.diskStorage({
     },
     filename: function(req,file,cb){
         // Todo: handle the situation when user uploads more than one file with same name
+        // solution : import uuid library
         cb(null, file.originalname)
     }
 })

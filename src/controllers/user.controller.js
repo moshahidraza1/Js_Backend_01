@@ -1,7 +1,7 @@
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
@@ -22,7 +22,7 @@ const generateAccessAndRefreshToken = async(userId)=>{
         if (!user) {
             throw new ApiError(401, "Could not find user")
         }
-        //errors in 
+         
         const accessToken = user.generateAccessToken()
 
         const refreshToken = user.generateRefreshToken()
@@ -39,32 +39,28 @@ const generateAccessAndRefreshToken = async(userId)=>{
     
 }
 
-
+//user registration logic
 const registerUser = asyncHandler(async (req,res) => {
-    // res.status(200).json({
-    //     message: "ok registered"
-    // })
-    //user registration logic
 
-    //get user details from frontend
+    //get user details from frontend/form data
     const {username, fullName, email, password} = req.body
     console.log(`[ username:  ${username}  fullName: ${fullName}  email: ${email} ]`)
     // console.log("Request.body content: ",req.body)
     // validations- fields not empty
-    if(
-        [username, fullName, email, password].some(
+    if([username, fullName, email, password].some(
             (field) => field?.trim() === "") ){
                 throw new ApiError(400, "All fields are required")
             }
-            // check if user already exists?
-            {
-                const existedUser = await User.findOne({
-                    $or: [{email}, {username}]
-                })
-                if(existedUser){
-                    throw new ApiError(409, "User with email or username already existed")
-                }
+    
+    // check if user already exists?
+    {
+        const existedUser = await User.findOne({
+            $or: [{email}, {username}]
+        })
+        if(existedUser){
+            throw new ApiError(409, "User with email or username already existed")
             }
+    }
             // console.log("Request.files content: ",req.files)
     // check for images,
             const avatarLocalPath = req.files?.avatar[0]?.path;
@@ -170,7 +166,8 @@ const logoutUser = asyncHandler(async(req,res)=>{
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            //remove accessToken from database
+            //remove refreshToken from database
+            // check why accessToken is not revoked here
             $unset: {
                 refreshToken: 1
             }
@@ -227,7 +224,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
         res.status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", newRefreshToken)
+        .cookie("refreshToken", newRefreshToken, options)
         .json(
             new ApiResponse(200,
                 {accessToken, refreshToken:newRefreshToken},
@@ -336,6 +333,10 @@ const updateAvatarImage = asyncHandler(async(req,res)=>{
     if(!avatar.url){
         throw new ApiError(400,"Failed to update avatar on cloudinary")
     }
+    const deleteAvatar = await deleteFromCloudinary(oldAvatarUrl)
+    if(!deleteAvatar){
+        throw new ApiError(500,"Failed to delete old avatar from cloudinary")
+    }
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -360,7 +361,7 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     const coverImageLocalPath = req.file?.path
 
     //Todo: delete from cloud
-
+    const oldCoverImage = await User.findById(req.user?._id)?.coverImage
     if(!coverImageLocalPath){
         throw new ApiError(400, "Cover image is missing")
     }
@@ -368,6 +369,10 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
     if(!coverImage.url){
         throw new ApiError(500, "Failed to update cover image on cloudinary")
+    }
+    const deleteCoverImage = await deleteFromCloudinary(oldCoverImage)
+    if(!deleteCoverImage){
+        throw new ApiError(500,"Failed to delete old cover image from cloudinary")
     }
     const user = await User.findByIdAndUpdate(
         userId,
