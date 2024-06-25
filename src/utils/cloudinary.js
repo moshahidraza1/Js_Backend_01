@@ -37,7 +37,12 @@ const deleteFromCloudinary = async(localFilePath)=>{
         if(!localFilePath){
             return null
         }
-        const response = await cloudinary.uploader.destroy(localFilePath);
+        // extracting public id from url because destroy is working on public id
+        const publicId = localFilePath.split('/').pop().split('.')[0];
+        const response = await cloudinary.uploader.destroy(publicId);
+        if (response.result !== "ok") {
+            throw new ApiError(500, "Error while deleting file from Cloudinary");
+        }
         return new ApiResponse(200, "File deleted successfully");
     } catch (error) {
         throw new ApiError(500, "Error while deleting files from cloudinary")
