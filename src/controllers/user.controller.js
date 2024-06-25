@@ -474,7 +474,7 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
     if(!channel?.length){
         throw new ApiError(404, "Channel not found")
     }
-
+// check what do we get when printing channel in place of channel[0]
     return res
     .status(200)
     .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
