@@ -1,6 +1,6 @@
 import mongoose, {isValidObjectId} from "mongoose";
 import { User } from "../models/user.model.js";
-import {Video} from "../models/video.model.js"
+import {Video} from "../models/video.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -24,11 +24,23 @@ const getAllVideos = asyncHandler(async(req,res)=>{
     // sortType === 1 then value will be 1 else assign -1 for descending
     sort[sortBy]= sortType === 'asc' ? 1 : -1
     const videos = await Video.aggregate([
-        // {
-            // $facet: {
-                // data: [
                     {
-                        $match: match
+                        $lookup:{
+                            from: 'users',
+                            localField: 'owner',
+                            foreignField: '_id',
+                            as: 'owner'
+                        }
+                    },
+                    {$unwind: 'owner'},
+                    {
+                        $match: {
+                            $or:[
+                                {match},
+                                {'owner.username': {$regex: query, $options: 'i'} },
+                                {'owner.fullName': {$regex: `.*${query}.*`, $options:'i'}}
+                            ]
+                        }
                     },
                     {
                         
@@ -55,12 +67,7 @@ const getAllVideos = asyncHandler(async(req,res)=>{
                             totalCount: 1
                         }
                     }
-                // ],
-                // $total: [
-                    // {$count: "count"}
-                // ]
-            // }
-        // }
+                
         
     ])
     const result = videos[0] || {data: [], totalCount: 0}
