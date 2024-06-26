@@ -120,13 +120,16 @@ const getVideoById = asyncHandler(async (req, res) => {
     if(!video){
         throw new ApiError(401, "Invalid videoId")
     }
-    // TODO: also get the duration of video
+    // TODO: also get the duration of video - pending
     res.status(200)
     .json(new ApiResponse(200, video, "Video fetched from videoId successfully"))
 })
 // may be save method needs to be updated
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400, "Invalid videoId recieved in params")
+    }
     //TODO: update video details like title, description, thumbnail
     const {title, description} = req.body
     const video = await Video.findById(videoId)
