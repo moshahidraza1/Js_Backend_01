@@ -63,7 +63,9 @@ const updateComment = asyncHandler(async(req,res)=>{
     if(!content){
         throw new ApiError(400, "Comment field is required")
     }
-    const comment = await Comment.findByIdAndUpdate(commentId, {
+    const comment = await Comment.findOneAndUpdate({_id: commentId,
+        owner: req.user._id
+    }, {
         $set: {
             content
         }
@@ -82,7 +84,7 @@ const deleteComment = asyncHandler(async(req,res)=>{
     if(!isValidObjectId(commentId)){
         throw new ApiError(400, "Invalid comment id")
         }
-    const comment = await Comment.findById(commentId)
+    const comment = await Comment.findOne({_id: commentId, owner: req.user._id})
     if(!comment){
         throw new ApiError(404, "comment Id not found")
     }

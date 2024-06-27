@@ -132,7 +132,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
     //TODO: update video details like title, description, thumbnail
     const {title, description} = req.body
-    const video = await Video.findById(videoId)
+    const video = await Video.findOne({_id: videoId, owner: req.user._id })
     if (!video) {
         throw new ApiError(404, "Video not found");
     }
@@ -170,7 +170,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    const video = await Video.findById(videoId)
+    const video = await Video.findOne({_id: videoId, owner: req.user._id})
     if(!video){
         throw new ApiError(401, "Invalid videoId")
     }
@@ -197,7 +197,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     if (!mongoose.isValidObjectId(videoId)) {
         throw new ApiError(400, "Invalid video ID");
     }
-    const video = await Video.findById(videoId)
+    const video = await Video.findOne({ _id: videoId, owner: req.user._id })
     if(!video){
         throw new ApiError(401, "Video not found")
         }
