@@ -32,6 +32,7 @@ import {
     publishAVideo
  );
 
+
  router
   .route("/:videoId")
   .get(getVideoById)
