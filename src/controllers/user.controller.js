@@ -480,7 +480,7 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
 
 })
-
+// add video to watch history 
 // get users watch history
 
 const getWatchHistory = asyncHandler(async(req,res)=>{
