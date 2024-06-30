@@ -1,6 +1,8 @@
 import mongoose, {isValidObjectId} from "mongoose";
 import {Like} from "../models/like.model.js"
+import { Comment } from "../models/comment.model.js";
 import { User } from "../models/user.model.js";
+import { Tweet } from "../models/tweet.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -32,7 +34,7 @@ const toggleVideoLike = asyncHandler(async(req,res)=>{
         // message = "Video liked successfully"
      }
 
-     const totalVideoLikes = await Like.countDocuments(videoLike)
+     const totalVideoLikes = await Like.countDocuments({ video: videoId })
     res.status(200)
     .json(new ApiResponse(200, totalVideoLikes, "Successfully updated video like"))
     
@@ -62,7 +64,7 @@ const toggleCommentLike = asyncHandler(async(req,res)=>{
             likedBy: req.user._id
         })
     }
-    const totalCommentLikes = await Like.countDocuments(commentLike)
+    const totalCommentLikes = await Like.countDocuments({ comment: commentId })
     res.status(200)
     .json(new ApiResponse(200, totalCommentLikes, "Successfully updated comment like"))
 
@@ -88,19 +90,20 @@ const toggleTweetLike = asyncHandler(async(req,res)=>{
             likedBy: req.user._id
         })
     }
-    const totalTweetLikes = Like.countDocuments(tweetLike)
-
+    
+    const totalTweetLikes = await Like.countDocuments({ tweet: tweetId })
+   
     res.status(200)
     .json(new ApiResponse(200, totalTweetLikes, "Successfully updated tweets like"))
 })
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
+    // const { userId } = req.params;
     //TODO: get all liked videos
-    if (!isValidObjectId(userId)) {
-        throw new ApiError(400, "Invalid user Id");
-    }
-    const user = await User.findById(userId);
+    // if (!isValidObjectId(userId)) {
+    //     throw new ApiError(400, "Invalid user Id");
+    // }
+    const user = await User.findById(req.user._id);
     if (!user) {
         throw new ApiError(404, "User not found");
         }
@@ -118,7 +121,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
                 as: "likedVideos"
             }
         },
-
+        { $unwind: "$likedVideos" },
         {
             $project: {
                 likedVideos: 1
@@ -126,7 +129,9 @@ const getLikedVideos = asyncHandler(async (req, res) => {
         }
 
     ])
-
+    if (!allLikedVideos.length) {
+        return res.status(404).json({ message: "No liked videos found" });
+    }
     res.status(200)
     .json(new ApiResponse(200, allLikedVideos, "successfully fetched liked Videos"))
 })

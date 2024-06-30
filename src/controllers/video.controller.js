@@ -226,11 +226,44 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Published dtstus toggled successfully"))
 })
 
+const incrementViewsAndWatchHistory = asyncHandler(async(req,res)=>{
+    const { videoId } = req.params
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400, "Invalid video ID")
+    }
+
+    const video = await Video.findById(videoId)
+    if(!videoId){
+        throw new ApiError(404, "Video not found")
+    }
+    video.views += 1;
+    await video.save();
+
+    const user = await User.findById(req.user._id)
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+
+    if(!user.watchHistory.includes(videoId)){
+        user.watchHistory.push(videoId)
+    }
+    else{
+        user.watchHistory.pull(videoId);
+        user.watchHistory.push(videoId)
+    }
+    await user.save();
+
+    res.status(200)
+    .json(new ApiResponse(200, user, "Successfully updated views and pushed into user's watch History" ))
+
+})
+
 export {
     getAllVideos,
     publishAVideo,
     getVideoById,
     updateVideo,
     deleteVideo,
-    togglePublishStatus
+    togglePublishStatus,
+    incrementViewsAndWatchHistory
 }

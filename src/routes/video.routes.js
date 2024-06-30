@@ -6,6 +6,7 @@ import {
     publishAVideo,
     togglePublishStatus,
     updateVideo,
+    incrementViewsAndWatchHistory
 
  } from "../controllers/video.controller.js"
  import {verifyJWT} from "../middlewares/auth.middleware.js"
@@ -42,4 +43,7 @@ import {
   router.route("/toggle/publish/:videoId")
   .patch(togglePublishStatus);
 
+  router.route("/views/:videoId").post(incrementViewsAndWatchHistory)
+
+  
   export default router

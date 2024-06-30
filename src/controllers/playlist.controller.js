@@ -140,7 +140,7 @@ if(!playlist){
 }
 
 res.status(200)
-.json(200, playlist, "Successfully updated playlist")
+.json(new ApiResponse(200, playlist, "Successfully updated playlist"))
 
 })
 
