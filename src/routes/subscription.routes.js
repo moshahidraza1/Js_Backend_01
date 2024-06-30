@@ -12,7 +12,7 @@ router.use(verifyJWT)
 router.route("/c/:channelId")
 .post(toggleSubscription);
 
-router.route("/c/:channelId/subscribedTo")
+router.route("/c/:channelId/subscribers")
 .get(getUserChannelSubscribers);
 
 
