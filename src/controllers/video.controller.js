@@ -20,7 +20,7 @@ const getAllVideos = asyncHandler(async(req,res)=>{
         match.owner = mongoose.Types.ObjectId(userId)
     }
     const sort = {}
-    //sortBy expects a string like 'title', sortType can be asc or desc 
+    // sortBy expects a string like 'title', sortType can be asc or desc 
     // sortType === 1 then value will be 1 else assign -1 for descending
     sort[sortBy]= sortType === 'asc' ? 1 : -1
     const videos = await Video.aggregate([
@@ -32,13 +32,13 @@ const getAllVideos = asyncHandler(async(req,res)=>{
                             as: 'owner'
                         }
                     },
-                    {$unwind: '$owner'},
+                    // {$unwind: '$owner'},
                     {
                         $match: {
                             $or:[
-                                {match},
+                                {...match},
                                 {'owner.username': {$regex: query, $options: 'i'} },
-                                {'owner.fullName': {$regex: `.*${query}.*`, $options:'i'}}
+                                {'owner.fullName': {$regex: query, $options:'i'}}
                             ]
                         }
                     },
@@ -53,23 +53,41 @@ const getAllVideos = asyncHandler(async(req,res)=>{
                         $limit: parseInt(limit)
                     },
                     {
+                        $project: {
+                            "owner.watchHistory": 0,
+                            "owner.password": 0,
+                            "owner.refreshToken": 0,
+                            "owner.updatedAt": 0,
+                            // data: 1,
+                            // totalCount: 1
+                        }
+                    },
+                    {
                         $group: {
                             _id: null,
                             data: {$push: "$$ROOT"},
                             totalCount: {$sum: 1}
                         }
                     },
-                    {
-                        $project: {
-                            data: {
-                                $slice: ['$data', 0 , parseInt(limit)]
-                            },
-                            totalCount: 1
-                        }
-                    }
+                    // {
+                    //     $project: {
+                           
+                    //         data: 1,
+                    //         totalCount: 1
+                    //     }
+                    // }
+                    
                 
         
     ])
+    //Test :
+    // let videos;
+    // if (query) {
+    //     // Adjust the query to match your schema and ensure case-insensitive search
+    //     videos = await Video.find({ title: { $regex: query, $options: 'i' } });
+    // } else {
+    //     videos = await Video.find({});
+    // }
     const result = videos[0] || {data: [], totalCount: 0}
     // if we have value inside total then get that value else assign 0
     // const totalCount = filter.total[0]? filter.total[0].count:0
