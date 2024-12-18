@@ -77,7 +77,8 @@ Ensure MongoDB is running on your machine or configure the `MONGO_URI` in the `.
 - **GET /api/v1/users/c/:username**: Get user's channel profile.
 - **GET /api/v1/users/history**: Get user's watch History.
     
-## Note: Remaining Endpoints will be soon Added
+## Postman Documentation For API Endpoints
+   https://api.postman.com/collections/33482892-a20f6fa3-4b86-426e-9541-e0109e4b231e?access_key=PMAT-01JFDJN72A5XZXMDY1ZBV924K4
 
 ## Contributing
 1. Fork the repository.
